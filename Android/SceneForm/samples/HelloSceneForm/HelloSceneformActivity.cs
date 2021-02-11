@@ -9,7 +9,7 @@ using Google.AR.Sceneform;
 using Google.AR.Sceneform.Rendering;
 using Google.AR.Sceneform.UX;
 using System;
-
+using Uri = Android.Net.Uri;
 
 namespace HelloSceneForm
 {
@@ -35,12 +35,37 @@ namespace HelloSceneForm
             //set the fragment
             arFragment = (ArFragment)SupportFragmentManager.FindFragmentById(Resource.Id.ux_fragment);
 
+            /*var modelo = this.Assets.Open("Totem.fbx");
+            
+            var testeeo = Uri.FromFile(Java.IO.File.Strea);*/
+
             //load and build the model
             ModelRenderable.InvokeBuilder().SetSource(this, Resource.Raw.andy).Build(((renderable) =>
             {
                 andyRenderable = renderable;
 
             }));
+
+            // var testeo = ModelRenderable.InvokeBuilder().HasSource();
+
+            /*var builder = ModelRenderable.InvokeBuilder();
+
+            var javaClass = Java.Lang.Class.FromType(builder.GetType());
+
+            var asdfdf = (Context)this;
+            var javaClass1 = Java.Lang.Class.FromType(asdfdf.GetType());
+
+            var testeo = Resource.Raw.andy;
+            var testeo2 = testeo.GetType();
+            //var javaClass2 = Java.Lang.Class.FromType(Java.Lang.Integer.Type);
+            var contexto = new Context();
+            var method = javaClass.GetMethod("setSource", Java.Lang.Class.Context, Java.Lang.Integer.Type);
+            method.Invoke(builder, this, Resource.Raw.andy);
+
+            var future = builder.Build();
+            var model = future.Get();
+
+            andyRenderable = (ModelRenderable)model;*/
 
             //add the event handler
             arFragment.TapArPlane += OnTapArPlane;
