@@ -44,6 +44,14 @@ namespace Google.AR.Sceneform.Rendering
 
                 return this;
             }
+
+            public unsafe ModelRenderable.Builder SetRegistryId(global::Java.Lang.Object registryId)
+            {
+                var rbuilder = this.JavaCast<Renderable.Builder>();
+                rbuilder.SetRegistryId(registryId);
+
+                return this;
+            }
             
 
             public void Build(Action<ModelRenderable> completionAction)
