@@ -6,9 +6,14 @@ using Android.Support.V7.App;
 using Android.Widget;
 using Google.AR.Core;
 using Google.AR.Sceneform;
+using Google.AR.Sceneform.Assets;
+using Google.AR.Sceneform.Math;
 using Google.AR.Sceneform.Rendering;
 using Google.AR.Sceneform.UX;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using Uri = Android.Net.Uri;
 
 namespace HelloSceneForm
@@ -19,7 +24,11 @@ namespace HelloSceneForm
         private static double MIN_OPENGL_VERSION = 3.0;
 
         private ArFragment arFragment;
-        private ModelRenderable andyRenderable;
+        public static ModelRenderable modeloEdificio;
+        public static ModelRenderable modeloTotem;
+        public static string GLTF_ASSET = "https://raw.githubusercontent.com/Siscomatias/TestGLTF/main/Totem/scene.gltf"; //https://raw.githubusercontent.com/Siscomatias/TestGLTF/main/scene.gltf
+        public static string GLTF_ASSET_EDIFICIO = "https://raw.githubusercontent.com/Siscomatias/TestGLTF/main/Edificio/scene.gltf";
+        private List<AugmentedImageNodeDiccionario> augmentedImageMap = new List<AugmentedImageNodeDiccionario>();
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -37,45 +46,111 @@ namespace HelloSceneForm
 
             /*var modelo = this.Assets.Open("Totem.fbx");
             
-            var testeeo = Uri.FromFile(Java.IO.File.Strea);*/
+            var testeeo = Uri.FromFile(Java.IO.File.Strea);*/           
 
             //load and build the model
-            ModelRenderable.InvokeBuilder().SetSource(this, Resource.Raw.andy).Build(((renderable) =>
+            /*ModelRenderable.InvokeBuilder().SetSource(this, Resource.Raw.andy).Build(((renderable) =>
             {
                 andyRenderable = renderable;
 
+            }));*/
+
+           // var tigre = Uri.Parse("https://storage.googleapis.com/ar-answers-in-search-models/static/Tiger/model.glb");
+
+           // var tigreSource = RenderableSource.InvokeBuilder().SetSource(this, tigre, RenderableSource.SourceType.Gltf2).Build();
+
+
+            /* ModelRenderable.InvokeBuilder().SetSource(this, tigre).Build(((renderable) =>
+             {
+                 andyRenderable = renderable;
+
+             }));*/
+
+            ModelRenderable.InvokeBuilder()
+            .SetSource(this, RenderableSource.InvokeBuilder().SetSource(
+            this,
+            Uri.Parse(GLTF_ASSET),
+            RenderableSource.SourceType.Gltf2)
+            .SetScale(1f)
+            .SetRecenterMode(RenderableSource.RecenterMode.Root)
+            .Build())
+            .SetRegistryId(GLTF_ASSET)
+            .Build(((renderable) =>
+            {
+                modeloTotem = renderable;
+
             }));
 
-            // var testeo = ModelRenderable.InvokeBuilder().HasSource();
+            ModelRenderable.InvokeBuilder()
+            .SetSource(this, RenderableSource.InvokeBuilder().SetSource(
+            this,
+            Uri.Parse(GLTF_ASSET_EDIFICIO),
+            RenderableSource.SourceType.Gltf2)
+            .SetScale(1f)
+            .SetRecenterMode(RenderableSource.RecenterMode.Root)
+            .Build())
+            .SetRegistryId(GLTF_ASSET_EDIFICIO)
+            .Build(((renderable) =>
+            {
+                modeloEdificio = renderable;
 
-            /*var builder = ModelRenderable.InvokeBuilder();
+            }));
 
-            var javaClass = Java.Lang.Class.FromType(builder.GetType());
-
-            var asdfdf = (Context)this;
-            var javaClass1 = Java.Lang.Class.FromType(asdfdf.GetType());
-
-            var testeo = Resource.Raw.andy;
-            var testeo2 = testeo.GetType();
-            //var javaClass2 = Java.Lang.Class.FromType(Java.Lang.Integer.Type);
-            var contexto = new Context();
-            var method = javaClass.GetMethod("setSource", Java.Lang.Class.Context, Java.Lang.Integer.Type);
-            method.Invoke(builder, this, Resource.Raw.andy);
-
-            var future = builder.Build();
-            var model = future.Get();
-
-            andyRenderable = (ModelRenderable)model;*/
 
             //add the event handler
             arFragment.TapArPlane += OnTapArPlane;
+            arFragment.ArSceneView.Scene.Update += onUpdateFrame;
 
+        }
+
+        private void onUpdateFrame(object sender, Scene.UpdateEventArgs e)
+        {
+            Frame frame = arFragment.ArSceneView.ArFrame;
+
+            // If there is no frame, just return.
+            if (frame == null)
+            {
+                return;
+            }
+
+            var updatedAugmentedImages = frame.GetUpdatedTrackables(Java.Lang.Class.FromType(typeof(AugmentedImage)));
+
+            foreach (AugmentedImage augmentedImage in updatedAugmentedImages) 
+            {                
+
+                if (augmentedImage.TrackingState == TrackingState.Paused)
+                {                    
+                }
+                else if (augmentedImage.TrackingState == TrackingState.Tracking)
+                {
+                    // Create a new anchor for newly found images.
+                    if (!augmentedImageMap.Where(a => a.image.Name == augmentedImage.Name).Any())
+                    {
+                        var node = new AugmentedImageNode(this, augmentedImage.Name);
+                        node.setImage(augmentedImage);
+
+                        var nuevo = new AugmentedImageNodeDiccionario();
+                        nuevo.image = augmentedImage;
+                        nuevo.node = node;
+
+                        augmentedImageMap.Add(nuevo);
+                        arFragment.ArSceneView.Scene.AddChild(node);
+                    }
+                }
+                else if (augmentedImage.TrackingState == TrackingState.Stopped)
+                {
+                    augmentedImageMap.Remove(augmentedImageMap.Where(a => a.image == augmentedImage).First());
+                }
+
+            }
         }
 
         private void OnTapArPlane(object sender, BaseArFragment.TapArPlaneEventArgs e)
         {
-            if (andyRenderable == null)
+            if (modeloEdificio == null)
                 return;
+
+
 
             // Create the Anchor.
             Anchor anchor = e.HitResult.CreateAnchor();
@@ -85,7 +160,8 @@ namespace HelloSceneForm
             // Create the transformable andy and add it to the anchor.
             TransformableNode andy = new TransformableNode(arFragment.TransformationSystem);
             andy.SetParent(anchorNode);
-            andy.Renderable = andyRenderable;
+            andy.Renderable = modeloEdificio;
+            
             andy.Select();
 
         }
@@ -115,6 +191,94 @@ namespace HelloSceneForm
         }
 
 
+    }
+
+    public class AugmentedImageNode : AnchorNode
+    {
+        public AugmentedImageNode node { get; set; }
+        public AugmentedImage image { get; set; }
+        private ModelRenderable modeloTest;        
+
+        public AugmentedImageNode(Context context, string augmentedImage)
+        {
+            // Upon construction, start loading the models for the corners of the frame.
+            if (modeloTest == null)
+            {
+                //var imageName = HelloSceneformActivity.GLTF_ASSET_EDIFICIO;
+                if (augmentedImage == AugmentedImageFragment.DEFAULT_IMAGE_NAME)
+                {
+                    //imageName = HelloSceneformActivity.GLTF_ASSET;
+                    modeloTest = HelloSceneformActivity.modeloEdificio;
+                }
+                else if (augmentedImage == AugmentedImageFragment.MARTE_IMAGE_NAME)
+                {
+                    //imageName = HelloSceneformActivity.GLTF_ASSET_EDIFICIO;
+                    modeloTest = HelloSceneformActivity.modeloTotem;
+                }
+                
+                /*ModelRenderable.InvokeBuilder()
+                .SetSource(context, RenderableSource.InvokeBuilder().SetSource(
+                context,
+                Uri.Parse(imageName),
+                RenderableSource.SourceType.Gltf2)
+                .SetScale(1f)
+                .SetRecenterMode(RenderableSource.RecenterMode.Root)
+                .Build())
+                .SetRegistryId(imageName)
+                .Build(((renderable) =>
+                {
+                    modeloTest = renderable;
+
+                }));*/
+            }
+        }
+
+        /**
+         * Called when the AugmentedImage is detected and should be rendered. A Sceneform node tree is
+         * created based on an Anchor created from the image. The corners are then positioned based on the
+         * extents of the image. There is no need to worry about world coordinates since everything is
+         * relative to the center of the image, which is the parent node of the corners.
+         */        
+        public void setImage(AugmentedImage image)
+        {
+            this.image = image;
+
+            // If any of the models are not loaded, then recurse when all are loaded.
+            /*if (!imagenTest.isDone() || !urCorner.isDone() || !llCorner.isDone() || !lrCorner.isDone())
+            {
+                
+            }*/
+
+            /*CompletableFuture.allOf(imagenTest, urCorner, llCorner, lrCorner)
+                    .thenAccept((Void aVoid)->setImage(image))
+          .exceptionally(
+              throwable-> {
+                    Log.e(TAG, "Exception loading", throwable);
+                    return null;
+                });*/
+
+            // Set the anchor based on the center of the image.
+            //SetAnchor(image.CreateAnchor(image.CenterPose));
+            
+            AnchorNode anchorNode = new AnchorNode(image.CreateAnchor(image.CenterPose));
+
+            this.Anchor = image.CreateAnchor(image.CenterPose);
+            // Make the 4 corner nodes.
+            //Vector3 localPosition = new Vector3();
+            Node cornerNode;
+           
+            cornerNode = new Node();
+            cornerNode.SetParent(this);
+            //cornerNode.LocalPosition = localPosition;
+            //cornerNode.SetRenderable(imagenTest.getNow(null));
+            cornerNode.Renderable = modeloTest;
+        }
+    }
+
+    public class AugmentedImageNodeDiccionario
+    {
+        public AugmentedImageNode node { get; set; }
+        public AugmentedImage image { get; set; }
     }
 }
 
