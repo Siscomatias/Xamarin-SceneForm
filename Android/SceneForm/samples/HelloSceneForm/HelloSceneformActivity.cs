@@ -26,8 +26,8 @@ namespace HelloSceneForm
         private ArFragment arFragment;
         public static ModelRenderable modeloEdificio;
         public static ModelRenderable modeloTotem;
-        public static string GLTF_ASSET = "https://raw.githubusercontent.com/Siscomatias/TestGLTF/main/Totem/scene.gltf"; //https://raw.githubusercontent.com/Siscomatias/TestGLTF/main/scene.gltf
-        public static string GLTF_ASSET_EDIFICIO = "https://raw.githubusercontent.com/Siscomatias/TestGLTF/main/Edificio/scene.gltf";
+        public static string GLTF_ASSET = "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF/Duck.gltf";
+        public static string GLTF_ASSET_EDIFICIO = "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF/Duck.gltf";
         private List<AugmentedImageNodeDiccionario> augmentedImageMap = new List<AugmentedImageNodeDiccionario>();
 
         protected override void OnCreate(Bundle savedInstanceState)
